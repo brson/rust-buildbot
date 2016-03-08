@@ -39,7 +39,9 @@ rust_package_dir = sys.argv[5]
 # Temporary work directory
 temp_dir = sys.argv[6]
 
-# The file to write the manifest to
+# The directory to write the manifest to. For stable
+# releases the manifest is written both for the stable
+# channel and for the permanent release.
 out = sys.argv[7]
 
 print "channel: " + channel
@@ -247,7 +249,16 @@ def generate_manifest(rustc_date, rustc_version, rustc_short_version,
     m = build_manifest(rustc_date, rustc_version, rustc_short_version,
                        cargo_date, cargo_version, cargo_short_version)
 
-    write_manifest(m)
+    manifest_name = "channel-rust-" + channel + ".toml"
+    manifest_file = out + "/" + manifest_name
+    write_manifest(m, manifest_file)
+
+    # Stable releases get a permanent manifest named after the version
+    if channel == "stable":
+        manifest_name = "channel-rust-" + rustc_short_version + ".toml"
+        manifest_file = out + "/" + manifest_name
+        write_manifest(m, manifest_file)
+
     print_summary(m)
 
 def build_manifest(rustc_date, rustc_version, rustc_short_version,
@@ -441,8 +452,8 @@ def url_and_hash_of_rust_package(target, rustc_short_version):
         "hash": hash,
     }
 
-def write_manifest(manifest):
-    with open(out, "w") as f:
+def write_manifest(manifest, file_path):
+    with open(file_path, "w") as f:
         f.write('manifest-version = "2"\n')
         f.write('date = "' + today + '"\n')
         f.write('\n')
